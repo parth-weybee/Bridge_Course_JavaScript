@@ -69,12 +69,19 @@ const calcDisplayBalance = (movements) => {
     return balance;
 }
 
-const displayMovements = function (movements) {
+let sort =false;
+
+const displayMovements = function (movements,sort=false) {
+    let tempMovement = [...movements];
+    if(sort)
+    {
+        tempMovement.sort((a,b)=>a-b);
+    }
     containerMovements.textContent = '';
-    movements.forEach((movement, i) => {
+    tempMovement.forEach((movement, i) => {
         const type = movement > 0 ? "deposit" : "withdrawal";
         const html = `<div class="movements__row">
-          <div class="movements__type movements__type--${type}">${i + 1}${type}</div>
+          <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
           <div class="movements__value">$${movement}</div>
         </div>`
         containerMovements.insertAdjacentHTML('afterbegin', html);
@@ -98,12 +105,9 @@ const calcWithdrawal = (movements) => {
 }
 
 const calcInterest = (movements, interest) => {
-    console.log(movements);
     return movements.filter(movement => movement > 0).map((deposit) => {
-        // console.log(deposit * (interest - 1));
         return (deposit * 1.2 )/100;
     }).filter((arr)=>arr>=1).reduce((acc, amount) => {
-        console.log(amount);
         return acc + amount;
     });
 }
@@ -115,6 +119,18 @@ const displaySummary = (account) => {
     labelSumIn.textContent = `${totalDeposit}€`;
     labelSumOut.textContent = `${totalWithdraw}€`;
     labelSumInterest.textContent = `${interest}€`;
+}
+
+
+const updateUI = (account) => {
+    inputLoginUsername.value ='';
+    inputLoginPin.value ='';
+    inputLoginPin.blur();
+    containerApp.style.opacity = 1;
+    welcomeUser(account.owner);
+    calcDisplayBalance(account.movements);
+    displayMovements(account.movements);
+    displaySummary(account);
 }
 
 
@@ -138,21 +154,82 @@ const createInitials = (str) => {
     }).join('');
 }
 
+let currentAccount;
+
+const transerAmount = (transerTo,amount)=>
+{
+    const accountTransferTo = accounts.find(acc=>createInitials(acc.owner)===transerTo);
+    console.log(accountTransferTo);
+    if(!accountTransferTo || amount>calcDeposit(currentAccount.movements))
+    {
+        alert('Invalid Transaction');
+        return;
+    }
+    currentAccount.movements.push(-amount);
+    accountTransferTo.movements.push(amount);
+    console.log(accountTransferTo.movements);
+    updateUI(currentAccount);
+}
+
+//Button Events
 btnLogin.addEventListener('click', (e) => {
     e.preventDefault();
+    currentAccount=undefined;
     const userName = inputLoginUsername.value;
     const password = inputLoginPin.value;
     accounts.forEach((account) => {
         if (createInitials(account.owner) === userName && password == account.pin) {
             updateUI(account);
+            currentAccount=account;
         }
     })
+    currentAccount || alert("Invalid Username or Password");
 });
 
-const updateUI = (account) => {
-    containerApp.style.opacity = 1;
-    welcomeUser(account.owner);
-    calcDisplayBalance(account.movements);
-    displayMovements(account.movements);
-    displaySummary(account);
-}
+btnTransfer.addEventListener('click',(e)=>
+{
+    e.preventDefault();
+    const transferTo = inputTransferTo.value;
+    const amount = Number(inputTransferAmount.value);
+    transerAmount(transferTo,amount);
+})
+
+btnClose.addEventListener('click',(e)=>
+{
+    e.preventDefault();
+    const userName = inputCloseUsername.value;
+    const pin = inputClosePin.value;
+    const accountsIndex = accounts.findIndex(acc=>createInitials(acc.owner)===userName);
+    if(!accounts[accountsIndex] || pin!=accounts[accountsIndex].pin)
+    {
+        alert('Invalid Credentials');
+        return;
+    }
+    accounts.splice(accountsIndex,1);
+    containerApp.style.opacity =0;
+    console.log(accounts);
+    inputCloseUsername.value='';
+    inputClosePin.value = '';
+})
+
+btnLoan.addEventListener('click',(e)=>
+{
+    e.preventDefault();
+    const amount = Number(inputLoanAmount.value);
+    const giveLoan = currentAccount.movements.some(mov=>amount<=mov*10);
+    if(!giveLoan)
+    {
+        alert("Sorry, We can't give you loan!! :(");
+        return;
+    }
+    currentAccount.movements.push(amount);
+    updateUI(currentAccount);
+    inputLoanAmount.value = '';
+    inputLoanAmount.blur();
+})
+
+btnSort.addEventListener('click',()=>
+{
+    sort = sort ? false:true;
+    displayMovements(currentAccount.movements,sort); 
+})
