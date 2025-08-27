@@ -61,31 +61,62 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-const calcDisplayBalance = (movements)=>
-{
-    const balance = movements.reduce((acc,mov,i)=>
-    {
-        return acc+=mov;
-    },0);
+const calcDisplayBalance = (movements) => {
+    const balance = movements.reduce((acc, mov, i) => {
+        return acc += mov;
+    }, 0);
     labelBalance.textContent = `${balance} EUR`;
     return balance;
 }
 
 const displayMovements = function (movements) {
     containerMovements.textContent = '';
-    movements.forEach((movement,i) => {
+    movements.forEach((movement, i) => {
         const type = movement > 0 ? "deposit" : "withdrawal";
         const html = `<div class="movements__row">
-          <div class="movements__type movements__type--${type}">${i+1}${type}</div>
+          <div class="movements__type movements__type--${type}">${i + 1}${type}</div>
           <div class="movements__value">$${movement}</div>
         </div>`
-        containerMovements.insertAdjacentHTML('afterbegin',html);
+        containerMovements.insertAdjacentHTML('afterbegin', html);
     })
 }
 
-const welcomeUser = ()=>{
-    labelWelcome.textContent = `Welcome ${currentAccount.owner.split(' ')[0]}`;
+const welcomeUser = (str) => {
+    labelWelcome.textContent = `Welcome ${str.split(' ')[0]}`;
 }
+
+const calcDeposit = (movements) => {
+    return movements.filter(mov => { return mov > 0 }).reduce((acc, mov) => {
+        return acc += mov;
+    });
+}
+
+const calcWithdrawal = (movements) => {
+    return movements.filter(movement => movement < 0).reduce((acc, mov) => {
+        return acc += Math.abs(mov);
+    }, 0);
+}
+
+const calcInterest = (movements, interest) => {
+    console.log(movements);
+    return movements.filter(movement => movement > 0).map((deposit) => {
+        // console.log(deposit * (interest - 1));
+        return (deposit * 1.2 )/100;
+    }).filter((arr)=>arr>=1).reduce((acc, amount) => {
+        console.log(amount);
+        return acc + amount;
+    });
+}
+
+const displaySummary = (account) => {
+    const totalDeposit = calcDeposit(account.movements);
+    const totalWithdraw = calcWithdrawal(account.movements);
+    const interest = calcInterest(account.movements, account.interestRate);
+    labelSumIn.textContent = `${totalDeposit}€`;
+    labelSumOut.textContent = `${totalWithdraw}€`;
+    labelSumInterest.textContent = `${interest}€`;
+}
+
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -107,20 +138,21 @@ const createInitials = (str) => {
     }).join('');
 }
 
-let currentAccount;
-
 btnLogin.addEventListener('click', (e) => {
     e.preventDefault();
     const userName = inputLoginUsername.value;
     const password = inputLoginPin.value;
     accounts.forEach((account) => {
-        console.log(createInitials(account.owner));
         if (createInitials(account.owner) === userName && password == account.pin) {
-            containerApp.style.opacity = 1;
-            currentAccount = account;
-            welcomeUser();
-            calcDisplayBalance(account.movements);
-            displayMovements(account.movements);
+            updateUI(account);
         }
     })
 });
+
+const updateUI = (account) => {
+    containerApp.style.opacity = 1;
+    welcomeUser(account.owner);
+    calcDisplayBalance(account.movements);
+    displayMovements(account.movements);
+    displaySummary(account);
+}
