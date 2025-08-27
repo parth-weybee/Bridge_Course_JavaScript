@@ -95,6 +95,8 @@ const createInitials = (str) => {
     return initals;
 }
 
+let currentAccount;
+
 btnLogin.addEventListener('click', (e) => {
     e.preventDefault();
     const userName = inputLoginUsername.value;
@@ -102,10 +104,14 @@ btnLogin.addEventListener('click', (e) => {
     accounts.forEach((account) => {
         if (createInitials(account.owner) === userName && password == account.pin) {
             containerApp.style.opacity = 1;
+            currentAccount = account;
+            welcomeUser();
             displayMovements(account.movements);
         }
     })
 });
 
-
+const welcomeUser = ()=>{
+    labelWelcome.textContent = `Welcome ${currentAccount.owner.split(' ')[0]}`
+}
 
