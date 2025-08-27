@@ -61,8 +61,18 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+const calcDisplayBalance = (movements)=>
+{
+    const balance = movements.reduce((acc,mov,i)=>
+    {
+        return acc+=mov;
+    },0);
+    labelBalance.textContent = `${balance} EUR`;
+    return balance;
+}
 
 const displayMovements = function (movements) {
+    containerMovements.textContent = '';
     movements.forEach((movement,i) => {
         const type = movement > 0 ? "deposit" : "withdrawal";
         const html = `<div class="movements__row">
@@ -72,7 +82,11 @@ const displayMovements = function (movements) {
         containerMovements.insertAdjacentHTML('afterbegin',html);
     })
 }
-displayMovements([200, -200, 340, -300, -20, 50, 400, -460]);
+
+const welcomeUser = ()=>{
+    labelWelcome.textContent = `Welcome ${currentAccount.owner.split(' ')[0]}`;
+}
+
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // LECTURES
@@ -88,11 +102,9 @@ const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
 /////////////////////////////////////////////////
 
 const createInitials = (str) => {
-    let initals = "";
-    str.toLowerCase().split(' ').forEach((element) => {
-        initals += element[0];
-    });
-    return initals;
+    return str.toLowerCase().split(' ').map((element) => {
+        return element[0];
+    }).join('');
 }
 
 let currentAccount;
@@ -102,16 +114,13 @@ btnLogin.addEventListener('click', (e) => {
     const userName = inputLoginUsername.value;
     const password = inputLoginPin.value;
     accounts.forEach((account) => {
+        console.log(createInitials(account.owner));
         if (createInitials(account.owner) === userName && password == account.pin) {
             containerApp.style.opacity = 1;
             currentAccount = account;
             welcomeUser();
+            calcDisplayBalance(account.movements);
             displayMovements(account.movements);
         }
     })
 });
-
-const welcomeUser = ()=>{
-    labelWelcome.textContent = `Welcome ${currentAccount.owner.split(' ')[0]}`
-}
-
